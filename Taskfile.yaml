@@ -1,0 +1,35 @@
+version: "3"
+
+env:
+  DATABASE_URL: "postgres://user:password@localhost:5432/jwt_post?sslmode=disable"
+
+tasks:
+  run:
+    desc: "Running entrypoint file - main.go"
+    cmds:
+      - go run cmd/main.go
+
+  build:
+    desc: "Build the app"
+    cmds:
+      - go build ./internal/cmd/main.go
+
+  migr-create:
+    desc: "Create migration"
+    cmds:
+      - dbmate --env-file ".env" -d "internal/config/migrations" new "{{.name}}"
+
+  db-up:
+    desc: "Run DB migrations up"
+    cmds:
+      - dbmate -d ./internal/config/migrations -url "{{.DATABASE_URL}}" up
+
+  db-down:
+    desc: "Run DB migrations down"
+    cmds:
+      - dbmate -d ./internal/config/migrations -url "{{.DATABASE_URL}}" down
+
+  sqlc:
+    desc: "Generate SQL code"
+    cmds:
+      - sqlc -f internal/config/sqlc.yaml generate

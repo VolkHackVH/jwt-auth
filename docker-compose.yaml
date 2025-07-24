@@ -1,0 +1,10 @@
+services:
+  postgres:
+    container_name: jwt_for_intern
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: jwt_post
+    ports:
+      - 5432:5432
