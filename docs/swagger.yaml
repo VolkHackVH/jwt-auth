@@ -1,0 +1,243 @@
+basePath: /
+definitions:
+  handlers.GenerateTokensRequest:
+    properties:
+      user_agent:
+        type: string
+    type: object
+  handlers.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+      - password
+      - username
+    type: object
+  handlers.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+      - refresh_token
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+      - password
+      - username
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Auth service with JWT and refresh tokens
+  title: JWT Auth Service
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+        - application/json
+      description: Авторизует пользователя и возвращает пару токенов
+      parameters:
+        - description: Данные для входа
+          in: body
+          name: login
+          required: true
+          schema:
+            $ref: "#/definitions/handlers.LoginRequest"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Вход пользователя
+      tags:
+        - auth
+  /logout:
+    post:
+      description: Удаляет refresh токен пользователя по user_id и User-Agent
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+        - BearerAuth: []
+      summary: Выход/Деавторизация
+      tags:
+        - auth
+  /me:
+    get:
+      description: Возвращает user_id авторзованного пользователя
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+        - BearerAuth: []
+      summary: Получение текущего пользователя
+      tags:
+        - auth
+  /refresh:
+    post:
+      consumes:
+        - application/json
+      description: Обновляет access и refresh токены
+      parameters:
+        - description: Refresh токен
+          in: body
+          name: refreshToken
+          required: true
+          schema:
+            $ref: "#/definitions/handlers.RefreshRequest"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Обновить токены
+      tags:
+        - auth
+  /register:
+    post:
+      consumes:
+        - application/json
+      description: Регистрирует нового пользователя с логином и паролем
+      parameters:
+        - description: Данные для регистрации
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/handlers.RegisterRequest"
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Регистрация пользователя
+      tags:
+        - auth
+  /tokens/{guid}:
+    post:
+      consumes:
+        - application/json
+      description: Генерирует access и refresh токены для заданного GUID (user_id)
+      parameters:
+        - description: User GUID
+          in: path
+          name: guid
+          required: true
+          type: string
+        - description: User-Agent клиента
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/handlers.GenerateTokensRequest"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Генерация токенов по GUID
+      tags:
+        - auth
+schemes:
+  - http
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -19,6 +19,15 @@ const (
 	envProd  = "prod"
 )
 
+// @title JWT Auth Service
+// @version 1.0
+// @description Auth service with JWT and refresh tokens
+// @host localhost:8080
+// @BasePath /
+// @schemes http
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	if err := godotenv.Load(); err != nil {
 		zap.L().Sugar().Fatalf("error loading environment: %w", err)

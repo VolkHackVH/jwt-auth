@@ -31,7 +31,16 @@ type AuthService interface {
 	) (auth.AccessToken, auth.RefreshToken, error)
 
 	Logout(ctx context.Context, userID pgtype.UUID, userAgent string) error
-	GetUserAgentAndIP(ctx context.Context, userID pgtype.UUID, userAgent string) (string, string, error)
+	GetUserAgentAndIP(ctx context.Context,
+		userID pgtype.UUID,
+		userAgent string,
+	) (string, string, error)
+
+	GenerateTokens(ctx context.Context,
+		userID pgtype.UUID,
+		userAgent,
+		ip string,
+	) (auth.AccessToken, auth.RefreshToken, error)
 }
 
 type UserService struct {
@@ -172,6 +181,45 @@ func (s *UserService) Logout(ctx context.Context,
 	}
 
 	return nil
+}
+
+func (s *UserService) GenerateTokens(ctx context.Context,
+	userID pgtype.UUID,
+	userAgent,
+	ip string,
+) (auth.AccessToken, auth.RefreshToken, error) {
+
+	_, err := s.db.GetUserByID(ctx, userID)
+	if err != nil {
+		return "", "", fmt.Errorf("user not found")
+	}
+
+	accessToken, err := auth.GenerateAccessToken(userID.String(), auth.AccessTokenTTL)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate access token")
+	}
+
+	refreshToken, err := auth.GenerateRefreshToken()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate refresh token")
+	}
+
+	hashedToken, err := auth.HashRefreshToken(refreshToken)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to hash refresh token")
+	}
+
+	_, err = s.db.CreateToken(ctx, db.CreateTokenParams{
+		UserID:    userID,
+		TokenHash: hashedToken,
+		UserAgent: userAgent,
+		IpAddress: ip,
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("failed to save refresh token")
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func (s *UserService) GetUserAgentAndIP(ctx context.Context,

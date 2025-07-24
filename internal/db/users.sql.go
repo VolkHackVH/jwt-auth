@@ -45,6 +45,25 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, username, created_at
+FROM users
+WHERE id = $1
+`
+
+type GetUserByIDRow struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	Username  string             `db:"username" json:"username"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i GetUserByIDRow
+	err := row.Scan(&i.ID, &i.Username, &i.CreatedAt)
+	return i, err
+}
+
 const loginUser = `-- name: LoginUser :one
 SELECT id, username, password_hash, created_at
 FROM users
